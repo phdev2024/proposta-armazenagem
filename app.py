@@ -1,5 +1,7 @@
 import streamlit as st
 from core.documento import gerar_contrato_word
+import os
+from core.documento import converter_docx_para_pdf
 
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
@@ -349,8 +351,35 @@ with aba_proposta:
             caminho_de_saida = f"templates/Proposta_{nome_cliente.replace(' ', '_')}.docx"
             
             try:
-                gerar_contrato_word(caminho_do_modelo, caminho_de_saida, dados_da_proposta)
-                st.balloons()
-                st.success(f"✅ Proposta Comercial completa gerada com sucesso em: {caminho_de_saida}")
+                # Criamos um carregador visual profissional na tela
+                with st.spinner("⚙️ Processando dados e gerando documentos..."):
+                    # 1. Gera o arquivo Word
+                    gerar_contrato_word(caminho_do_modelo, caminho_de_saida, dados_da_proposta)
+                    
+                    # 2. Define o nome e caminho do PDF de saída
+                    caminho_pdf = caminho_de_saida.replace(".docx", ".pdf")
+                    
+                    # Importamos e chamamos a função de conversão
+                    from core.documento import converter_docx_para_pdf
+                    sucesso_pdf = converter_docx_para_pdf(caminho_de_saida, caminho_pdf)
+                
+                if sucesso_pdf and os.path.exists(caminho_pdf):
+                    # Alerta verde de sucesso corporativo (sem balões)
+                    st.toast("Proposta gerada com sucesso!", icon="✅")
+                    st.success("### 📄 Proposta Comercial Disponível para Download")
+                    st.markdown("Os documentos foram gerados e revisados pelo sistema. Clique no botão abaixo para baixar o arquivo final em formato PDF.")
+                    
+                    # 3. Botão nativo de download
+                    with open(caminho_pdf, "rb") as f_pdf:
+                        st.download_button(
+                            label="📥 Baixar Proposta Comercial (PDF)",
+                            data=f_pdf,
+                            file_name=f"Proposta_{nome_cliente.replace(' ', '_')}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                else:
+                    st.warning("⚠️ O Word foi gerado, mas houve uma limitação ao converter para PDF localmente.")
+                    
             except Exception as e:
                 st.error(f"Erro ao gerar o arquivo: {e}")
