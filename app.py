@@ -1,0 +1,293 @@
+import streamlit as st
+
+# Configuração da página
+st.set_page_config(page_title="Gerador de Propostas", layout="wide")
+
+st.title("📄 Sistema de Propostas - Armazenagem")
+st.markdown("---")
+
+# Criando as abas na tela
+aba_proposta, aba_config = st.tabs(["📋 Preenchimento da Proposta", "⚙️ Configurações Fiscais"])
+
+# --- ABA 2: CONFIGURAÇÕES FISCAIS ---
+with aba_config:
+    st.subheader("Configurações de Impostos e Taxas")
+    st.write("Altere as alíquotas padrão se houver mudanças na legislação.")
+    iss_padrao = st.number_input("Alíquota do ISS (%)", min_value=0.0, max_value=100.0, value=2.0, step=0.1)
+
+# --- ABA 1: PREENCHIMENTO DA PROPOSTA ---
+with aba_proposta:
+    st.subheader("Dados Comerciais do Cliente")
+    
+    col_empresa, col_cnpj = st.columns(2)
+    with col_empresa:
+        nome_cliente = st.text_input("Nome do Cliente / Razão Social", placeholder="Ex: Logística Brasil LTDA")
+    with col_cnpj:
+        cnpj_cliente = st.text_input("CNPJ", placeholder="00.000.000/0000-00")
+        
+    st.markdown("---")
+    st.subheader("Tabela de Preços dos Serviços")
+    st.write("Preencha os valores, bases e periodicidades combinados com o cliente.")
+    
+    # Opções padrão para a caixinha de periodicidade
+    opcoes_periodo = ["MENSAL", "Sob Demanda", "QUINZENAL", "DIÁRIO", "-"]
+
+    # --- ITEM 2.1: ARMAZENAGEM ---
+    st.markdown("### 2.1 Armazenagem")
+    st.caption("A cobrança será realizada sobre o saldo anterior somando entradas do período e deduzindo as saídas (Maior pico de paletes armazenados no período).")
+    
+    col_v1, col_b1, col_p1 = st.columns(3)
+    with col_v1:
+        valor_armazenagem = st.number_input("Valor (R$)", min_value=0.0, value=115.00, step=0.50, key="val_armazenagem")
+    with col_b1:
+        base_armazenagem = st.selectbox("Base", ["Por Pallet.", "Por M²", "Por Posição Palete"], index=0, key="base_armazenagem")
+    with col_p1:
+        periodo_armazenagem = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_armazenagem")
+        
+    # --- ITEM 2.2: MOVIMENTAÇÃO DE ENTRADA (CROSS-DOCKING) ---
+    st.markdown("### 2.2 Movimentação de Entrada (Cross-docking)")
+    st.caption("Desembarque, conferência, etiquetagem padrão WMS, input sistêmico, endereçamento, geração de relatórios.")
+    
+    col_v2, col_b2, col_p2 = st.columns(3)
+    with col_v2:
+        valor_entrada_cross = st.number_input("Valor (R$)", min_value=0.0, value=20.00, step=0.50, key="val_entrada_cross")
+    with col_b2:
+        base_entrada_cross = st.selectbox("Base", ["Por pallet", "Por Volume"], index=0, key="base_entrada_cross")
+    with col_p2:
+        periodo_entrada_cross = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_entrada_cross")
+
+    # --- ITEM 2.3: MOVIMENTAÇÃO DE ENTRADA (CONTAINER) ---
+    st.markdown("### 2.3 Movimentação de Entrada (Desova de Container)")
+    st.caption("Desembarque, Desova de container, conferência, etiquetagem padrão WMS, input sistêmico, endereçamento, geração de relatórios.")
+    
+    col_v3, col_b3, col_p3 = st.columns(3)
+    with col_v3:
+        valor_entrada_cont = st.number_input("Valor (R$)", min_value=0.0, value=0.50, step=0.05, key="val_entrada_cont")
+    with col_b3:
+        base_entrada_cont = st.selectbox("Base", ["Por Caixa MASTER", "Por Unidade"], index=0, key="base_entrada_cont")
+    with col_p3:
+        periodo_entrada_cont = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_entrada_cont")
+
+    # --- ITEM 2.4: PALETIZAÇÃO RECEBIMENTO ---
+    st.markdown("### 2.4 Paletização Recebimento (Incluso Stretch)")
+    st.caption("Cenário de recebimento de carga batida ou fora do padrão de paletização. Neste cenário será cobrado PALETIZAÇÃO + MOVIMENTAÇÃO DE ENTRADA.")
+    
+    col_v4, col_b4, col_p4 = st.columns(3)
+    with col_v4:
+        valor_paletizacao = st.number_input("Valor (R$)", min_value=0.0, value=8.50, step=0.50, key="val_paletizacao")
+    with col_b4:
+        base_paletizacao = st.selectbox("Base", ["Por Pallet", "Por Volume"], index=0, key="base_paletizacao")
+    with col_p4:
+        periodo_paletizacao = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_paletizacao")
+
+    # --- ITEM 2.5: FORRAÇÃO ---
+    st.markdown("### 2.5 Forração (Folha de Papel Kraft)")
+    st.caption("Especialmente utilizado em armazenamento de produtos alimentícios (por exigência da VIGILÂNCIA SANITÁRIA), serve para evitar o contato do produto diretamente com o pallet e evitar acúmulo de poeira na parte superior.")
+    
+    col_v5, col_b5, col_p5 = st.columns(3)
+    with col_v5:
+        valor_forracao = st.number_input("Valor (R$)", min_value=0.0, value=0.00, step=0.10, key="val_forracao")
+    with col_b5:
+        base_forracao = st.selectbox("Base", ["Por Folha", "Por Pallet"], index=0, key="base_forracao")
+    with col_p5:
+        periodo_forracao = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_forracao")
+
+    # --- ITEM 2.6: MOVIMENTAÇÃO INTERNA ---
+    st.markdown("### 2.6 Movimentação Interna")
+    st.caption("Separação de pallet ou fração por solicitação do cliente seja por qualquer motivo, onde o produto retorne ao estoque.")
+    
+    col_v6, col_b6, col_p6 = st.columns(3)
+    with col_v6:
+        valor_mov_interna = st.number_input("Valor (R$)", min_value=0.0, value=0.00, step=1.00, key="val_mov_interna")
+    with col_b6:
+        base_mov_interna = st.selectbox("Base", ["Por NF", "Por Pallet"], index=0, key="base_mov_interna")
+    with col_p6:
+        periodo_mov_interna = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_mov_interna")
+
+    # --- ITEM 2.7: INVENTÁRIOS ---
+    st.markdown("### 2.7 Inventários")
+    st.caption("Contagem geral ou cíclica de produtos por solicitação do cliente.")
+    
+    col_v7, col_b7, col_p7 = st.columns(3)
+    with col_v7:
+        valor_inventario = st.number_input("Valor (R$)", min_value=0.0, value=14.00, step=0.50, key="val_inventario")
+    with col_b7:
+        base_inventario = st.selectbox("Base", ["Por Pallet", "Por Item"], index=0, key="base_inventario")
+    with col_p7:
+        periodo_inventario = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_inventario")
+
+    # --- ITEM 2.8: PICKING EXPEDIÇÃO (POR NF) ---
+    st.markdown("### 2.8 Picking Expedição (Fracionamento por Volume)")
+    st.caption("Fracionamento por volume (cx máster) ou fração proporcional (unidades). Neste cenário será cobrado PICKING + MOVIMENTAÇÃO DE SAÍDA.")
+    
+    col_v8, col_b8, col_p8 = st.columns(3)
+    with col_v8:
+        valor_picking_nf = st.number_input("Valor (R$)", min_value=0.0, value=3.80, step=0.10, key="val_picking_nf")
+    with col_b8:
+        base_picking_nf = st.selectbox("Base", ["Por NF", "Por Volume"], index=0, key="base_picking_nf")
+    with col_p8:
+        periodo_picking_nf = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_picking_nf")
+
+    # --- ITEM 2.9: PICKING EXPEDIÇÃO (POR PALLET) ---
+    st.markdown("### 2.9 Picking Expedição (Por Pallet)")
+    st.caption("Fracionamento por volume (cx máster) ou fração proporcional (unidades). Neste cenário será cobrado PICKING + MOVIMENTAÇÃO DE SAÍDA.")
+    
+    col_v9, col_b9, col_p9 = st.columns(3)
+    with col_v9:
+        valor_picking_plt = st.number_input("Valor (R$)", min_value=0.0, value=10.50, step=0.50, key="val_picking_plt")
+    with col_b9:
+        base_picking_plt = st.selectbox("Base", ["Por Pallet", "Por Volume"], index=0, key="base_picking_plt")
+    with col_p9:
+        periodo_picking_plt = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_picking_plt")
+
+    # --- ITEM 2.10: MOVIMENTAÇÃO DE SAÍDA ---
+    st.markdown("### 2.10 Movimentação de Saída")
+    st.caption("Separação, conferência, etiquetagem padrão WMS, emissão de NF e embarque.")
+    
+    col_v10, col_b10, col_p10 = st.columns(3)
+    with col_v10:
+        valor_saida = st.number_input("Valor (R$)", min_value=0.0, value=0.90, step=0.05, key="val_saida")
+    with col_b10:
+        base_saida = st.selectbox("Base", ["Por VOLUME", "Por Pallet"], index=0, key="base_saida")
+    with col_p10:
+        periodo_saida = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_saida")
+
+    # --- ITEM 2.11: LABELING (IMPRESSÃO ETIQUETA) ---
+    st.markdown("### 2.11 Labeling (Impressão de Etiqueta)")
+    st.caption("Quando o cliente solicita Impressão ETIQUETA PADRÃO WMS.")
+    
+    col_v11, col_b11, col_p11 = st.columns(3)
+    with col_v11:
+        valor_labeling = st.number_input("Valor (R$)", min_value=0.0, value=0.18, step=0.01, key="val_labeling")
+    with col_b11:
+        base_labeling = st.selectbox("Base", ["Por Etiqueta", "Por Pallet"], index=0, key="base_labeling")
+    with col_p11:
+        periodo_labeling = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_labeling")
+
+    # --- ITEM 2.12: PACKING PADRÃO (ADICIONADO) ---
+    st.markdown("### 2.12 Packing Padrão")
+    st.caption("Embalagem dos kits com nossas caixas padrões.")
+    
+    col_v12, col_b12, col_p12 = st.columns(3)
+    with col_v12:
+        valor_packing_padrao = st.number_input("Valor (R$)", min_value=0.0, value=0.00, step=0.50, key="val_packing_padrao")
+    with col_b12:
+        base_packing_padrao = st.selectbox("Base", ["Sob Demanda", "Por Caixa"], index=0, key="base_packing_padrao")
+    with col_p12:
+        periodo_packing_padrao = st.selectbox("Periodicidade", opcoes_periodo, index=1, key="per_packing_padrao")
+
+    # --- ITEM 2.13: PACKING ESPECIAL (ADICIONADO) ---
+    st.markdown("### 2.13 Packing Especial")
+    st.caption("Embalagem dos kits que demandem utilização de embalagens fora dos nossos padrões de caixas.")
+    
+    col_v13, col_b13, col_p13 = st.columns(3)
+    with col_v13:
+        valor_packing_esp = st.number_input("Valor (R$)", min_value=0.0, value=0.00, step=0.50, key="val_packing_esp")
+    with col_b13:
+        base_packing_esp = st.selectbox("Base", ["Sob Demanda", "Por Caixa"], index=0, key="base_packing_esp")
+    with col_p13:
+        periodo_packing_esp = st.selectbox("Periodicidade", opcoes_periodo, index=1, key="per_packing_esp")
+
+    # --- ITEM 2.14: ALUGUEL DE PALETE PBR (ADICIONADO) ---
+    st.markdown("### 2.14 Aluguel de Palete PBR")
+    st.caption("Quando se utiliza pallets PBR para armazenagem.")
+    
+    col_v14, col_b14, col_p14 = st.columns(3)
+    with col_v14:
+        valor_aluguel_pbr = st.number_input("Valor (R$)", min_value=0.0, value=0.00, step=0.50, key="val_aluguel_pbr")
+    with col_b14:
+        base_aluguel_pbr = st.selectbox("Base", ["-", "Por Pallet"], index=0, key="base_aluguel_pbr")
+    with col_p14:
+        periodo_aluguel_pbr = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_aluguel_pbr")
+
+    # --- ITEM 2.15: COMPRA DE PALETE PBR (ADICIONADO) ---
+    st.markdown("### 2.15 Compra de Palete PBR")
+    st.caption("Quando da necessidade de embarque do nosso pallet PBR.")
+    
+    col_v15, col_b15, col_p15 = st.columns(3)
+    with col_v15:
+        valor_compra_pbr = st.number_input("Valor (R$)", min_value=0.0, value=41.00, step=1.00, key="val_compra_pbr")
+    with col_b15:
+        base_compra_pbr = st.selectbox("Base", ["Por Pallet", "-"], index=0, key="base_compra_pbr")
+    with col_p15:
+        periodo_compra_pbr = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_compra_pbr")
+
+    # --- ITEM 2.16: LABELING (MANUSEIO MONTAGEM KIT) ---
+    st.markdown("### 2.16 Labeling (Manuseio e Montagem de Kit)")
+    st.caption("Serviço de manuseio e etiquetagem especial para montagem de kits.")
+    
+    col_v16, col_b16, col_p16 = st.columns(3)
+    with col_v16:
+        valor_montagem_kit = st.number_input("Valor (R$)", min_value=0.0, value=3.90, step=0.10, key="val_montagem_kit")
+    with col_b16:
+        base_montagem_kit = st.selectbox("Base", ["Por unidade", "Por Kit"], index=0, key="base_montagem_kit")
+    with col_p16:
+        periodo_montagem_kit = st.selectbox("Periodicidade", opcoes_periodo, index=1, key="per_montagem_kit")
+
+    # --- ITEM 2.17: SEGURO ARMAZENAGEM (AD VALOREM) ---
+    st.markdown("### 2.17 Seguro Armazenagem (Ad Valorem)")
+    st.caption("Seguro cobrado com base no valor total da Nota Fiscal de entrada dos produtos.")
+    
+    col_v17, col_b17, col_p17 = st.columns(3)
+    with col_v17:
+        valor_seguro = st.number_input("Porcentagem (%)", min_value=0.0, max_value=100.0, value=0.19, step=0.01, key="val_seguro")
+    with col_b17:
+        base_seguro = st.selectbox("Base", ["Valor (R$) Nota fiscal de entrada dos produtos"], index=0, key="base_seguro")
+    with col_p17:
+        periodo_seguro = st.selectbox("Periodicidade", opcoes_periodo, index=0, key="per_seguro")
+
+    # --- ITEM 2.18: DESOVA DE CARGA FRACIONADA ---
+    st.markdown("### 2.18 Desova de Carga Fracionada")
+    st.caption("Custos aplicados para a desova de veículos com carga fracionada.")
+    
+    col_v18, col_b18, col_p18 = st.columns(3)
+    with col_v18:
+        valor_desova_frac = st.number_input("Valor (R$)", min_value=0.0, value=500.00, step=50.00, key="val_desova_frac")
+    with col_b18:
+        base_desova_frac = st.selectbox("Base", ["Por Veículo", "Por Pallet"], index=0, key="base_desova_frac")
+    with col_p18:
+        periodo_desova_frac = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_desova_frac")
+
+    # --- ITEM 2.19: DESOVA / CARREGAMENTO TRUCK / CONTAINER 20' ---
+    st.markdown("### 2.19 Desova / Carregamento Truck ou Container 20'")
+    st.caption("Operação Manual ou Mecânica por veículo do tipo Truck or Container de 20 pés.")
+    
+    col_v19, col_b19, col_p19 = st.columns(3)
+    with col_v19:
+        valor_desova_20 = st.number_input("Valor (R$)", min_value=0.0, value=850.00, step=50.00, key="val_desova_20")
+    with col_b19:
+        base_desova_20 = st.selectbox("Base", ["Por Veículo", "Por Contêiner"], index=0, key="base_desova_20")
+    with col_p19:
+        periodo_desova_20 = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_desova_20")
+
+    # --- ITEM 2.20: DESOVA / CARREGAMENTO CARRETA / CONTAINER 40' ---
+    st.markdown("### 2.20 Desova / Carregamento Carreta ou Container 40'")
+    st.caption("Operação Manual ou Mecânica por veículo do tipo Carreta ou Container de 40 pés.")
+    
+    col_v20, col_b20, col_p20 = st.columns(3)
+    with col_v20:
+        valor_desova_40 = st.number_input("Valor (R$)", min_value=0.0, value=850.00, step=50.00, key="val_desova_40")
+    with col_b20:
+        base_desova_40 = st.selectbox("Base", ["Por Veículo", "Por Contêiner"], index=0, key="base_desova_40")
+    with col_p20:
+        periodo_desova_40 = st.selectbox("Periodicidade", opcoes_periodo, index=4, key="per_desova_40")
+
+    # --- ITEM 2.21: HORA EXTRA OPERACIONAL ---
+    st.markdown("### 2.21 Hora Extra por Equipe (Quando necessário e autorizado)")
+    st.caption("Valor cobrado por hora de operação estendida fora do horário padrão da base.")
+    
+    col_v21, col_b21, col_p21 = st.columns(3)
+    with col_v21:
+        valor_hora_extra = st.number_input("Valor da Hora (R$)", min_value=0.0, value=50.00, step=5.00, key="val_hora_extra")
+    with col_b21:
+        base_hora_extra = st.selectbox("Condição", ["Dias úteis após o horário", "Sábados, Domingos e Feriados (Dobro)"], index=0, key="base_hora_extra")
+    with col_p21:
+        periodo_hora_extra = st.selectbox("Periodicidade", opcoes_periodo, index=1, key="per_hora_extra")
+
+    # --- ESPAÇAMENTO E BOTÃO FINAL ---
+    st.markdown("###")
+    st.markdown("---")
+    
+    if st.button("🚀 Gerar Proposta Comercial (PDF)", use_container_width=True):
+        st.success(f"Processando os dados para a empresa: {nome_cliente if nome_cliente else 'Cliente Não Informado'}...")
+        st.info("Aguarde... Na Fase 2 conectaremos este botão ao gerador de arquivos!")
