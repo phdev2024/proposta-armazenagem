@@ -1,4 +1,5 @@
 import streamlit as st
+from core.documento import gerar_contrato_word
 
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
@@ -288,6 +289,68 @@ with aba_proposta:
     st.markdown("###")
     st.markdown("---")
     
-    if st.button("🚀 Gerar Proposta Comercial (PDF)", use_container_width=True):
-        st.success(f"Processando os dados para a empresa: {nome_cliente if nome_cliente else 'Cliente Não Informado'}...")
-        st.info("Aguarde... Na Fase 2 conectaremos este botão ao gerador de arquivos!")
+    # --- ESPAÇAMENTO E BOTÃO FINAL ---
+    st.markdown("###")
+    st.markdown("---")
+    
+    if st.button("🚀 Gerar Proposta Comercial", use_container_width=True):
+        if not nome_cliente or not cnpj_cliente:
+            st.error("⚠️ Por favor, preencha o Nome do Cliente e o CNPJ antes de gerar a proposta.")
+        else:
+            st.success(f"Processando os dados para a empresa: {nome_cliente}...")
+            
+            # --- FUNÇÃO INTERNA PARA FORMATAR MOEDA ---
+            def fmt_moeda(valor):
+                return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            
+            # --- CRIAÇÃO DO DICIONÁRIO DE TAGS COMPLETO (1 ao 21) ---
+            dados_da_proposta = {
+                "{{NOME_CLIENTE}}": nome_cliente,
+                "{{CNPJ_CLIENTE}}": cnpj_cliente,
+                
+                # Itens 2.1 a 2.3
+                "{{ITEM_1}}": "2.1", "{{VALOR_1}}": fmt_moeda(valor_armazenagem), "{{BASE_1}}": base_armazenagem, "{{PER_1}}": periodo_armazenagem,
+                "{{ITEM_2}}": "2.2", "{{VALOR_2}}": fmt_moeda(valor_entrada_cross), "{{BASE_2}}": base_entrada_cross, "{{PER_2}}": periodo_entrada_cross,
+                "{{ITEM_3}}": "2.3", "{{VALOR_3}}": fmt_moeda(valor_entrada_cont), "{{BASE_3}}": base_entrada_cont, "{{PER_3}}": periodo_entrada_cont,
+                
+                # Itens 2.4 a 2.7
+                "{{ITEM_4}}": "2.4", "{{VALOR_4}}": fmt_moeda(valor_paletizacao), "{{BASE_4}}": base_paletizacao, "{{PER_4}}": periodo_paletizacao,
+                "{{ITEM_5}}": "2.5", "{{VALOR_5}}": fmt_moeda(valor_forracao), "{{BASE_5}}": base_forracao, "{{PER_5}}": periodo_forracao,
+                "{{ITEM_6}}": "2.6", "{{VALOR_6}}": fmt_moeda(valor_mov_interna), "{{BASE_6}}": base_mov_interna, "{{PER_6}}": periodo_mov_interna,
+                "{{ITEM_7}}": "2.7", "{{VALOR_7}}": fmt_moeda(valor_inventario), "{{BASE_7}}": base_inventario, "{{PER_7}}": periodo_inventario,
+                
+                # Itens 2.8 a 2.11
+                "{{ITEM_8}}": "2.8", "{{VALOR_8}}": fmt_moeda(valor_picking_nf), "{{BASE_8}}": base_picking_nf, "{{PER_8}}": periodo_picking_nf,
+                "{{ITEM_9}}": "2.9", "{{VALOR_9}}": fmt_moeda(valor_picking_plt), "{{BASE_9}}": base_picking_plt, "{{PER_9}}": periodo_picking_plt,
+                "{{ITEM_10}}": "2.10", "{{VALOR_10}}": fmt_moeda(valor_saida), "{{BASE_10}}": base_saida, "{{PER_10}}": periodo_saida,
+                "{{ITEM_11}}": "2.11", "{{VALOR_11}}": fmt_moeda(valor_labeling), "{{BASE_11}}": base_labeling, "{{PER_11}}": periodo_labeling,
+                
+                # Itens 2.12 a 2.15
+                "{{ITEM_12}}": "2.12", "{{VALOR_12}}": fmt_moeda(valor_packing_padrao), "{{BASE_12}}": base_packing_padrao, "{{PER_12}}": periodo_packing_padrao,
+                "{{ITEM_13}}": "2.13", "{{VALOR_13}}": fmt_moeda(valor_packing_esp), "{{BASE_13}}": base_packing_esp, "{{PER_13}}": periodo_packing_esp,
+                "{{ITEM_14}}": "2.14", "{{VALOR_14}}": fmt_moeda(valor_aluguel_pbr), "{{BASE_14}}": base_aluguel_pbr, "{{PER_14}}": periodo_aluguel_pbr,
+                "{{ITEM_15}}": "2.15", "{{VALOR_15}}": fmt_moeda(valor_compra_pbr), "{{BASE_15}}": base_compra_pbr, "{{PER_15}}": periodo_compra_pbr,
+                
+                # Itens 2.16 a 2.17
+                "{{ITEM_16}}": "2.16", "{{VALOR_16}}": f"{valor_seguro:.2f}%", "{{BASE_16}}": base_seguro, "{{PER_16}}": periodo_seguro,
+                "{{ITEM_17}}": "2.17", "{{VALOR_17}}": fmt_moeda(valor_montagem_kit), "{{BASE_17}}": base_montagem_kit, "{{PER_17}}": periodo_montagem_kit,
+                
+                
+                # Itens 2.18 a 2.20
+                "{{ITEM_18}}": "2.18", "{{VALOR_18}}": fmt_moeda(valor_desova_frac), "{{BASE_18}}": base_desova_frac, "{{PER_18}}": periodo_desova_frac,
+                "{{ITEM_19}}": "2.19", "{{VALOR_19}}": fmt_moeda(valor_desova_20), "{{BASE_19}}": base_desova_20, "{{PER_19}}": periodo_desova_20,
+                "{{ITEM_20}}": "2.20", "{{VALOR_20}}": fmt_moeda(valor_desova_40), "{{BASE_20}}": base_desova_40, "{{PER_20}}": periodo_desova_40,
+                
+                # Item 2.21 (Apenas o número do Item na célula mesclada)
+                "{{ITEM_21}}": "2.21"
+            }
+            
+            caminho_do_modelo = "templates/modelo.docx"
+            caminho_de_saida = f"templates/Proposta_{nome_cliente.replace(' ', '_')}.docx"
+            
+            try:
+                gerar_contrato_word(caminho_do_modelo, caminho_de_saida, dados_da_proposta)
+                st.balloons()
+                st.success(f"✅ Proposta Comercial completa gerada com sucesso em: {caminho_de_saida}")
+            except Exception as e:
+                st.error(f"Erro ao gerar o arquivo: {e}")
