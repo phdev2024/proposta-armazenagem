@@ -1,0 +1,12 @@
+[theme]
+# Cor principal: Botão de Gerar Proposta, Abas selecionadas e destaques
+primaryColor = "#008f84"
+
+# Cor de fundo da página (Mantemos limpa e clara para leitura)
+backgroundColor = "#FFFFFF"
+
+# Cor de fundo das caixas de digitação de valores e barras laterais
+secondaryBackgroundColor = "#F4F9F8"
+
+# Cor dos textos principais (Usamos o tom mais escuro para ficar bem legível)
+textColor = "#306359"

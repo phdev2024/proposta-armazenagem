@@ -6,8 +6,44 @@ from core.documento import converter_docx_para_pdf
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
 
-st.title("📄 Sistema de Propostas - Armazenagem")
-st.markdown("---")
+
+# --- ADICIONANDO A LOGO DA EMPRESA ---
+caminho_logo = "templates/logo1.png"
+
+if os.path.exists(caminho_logo):
+    # Cria duas colunas: a primeira ocupa 1 parte do espaço e a segunda ocupa 4 partes
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
+        # Exibe a logo alinhada verticalmente com o título
+        st.image(caminho_logo, width=150)
+        
+    with col2:
+        # Coloca o título logo ao lado da imagem
+        st.title("Sistema de Propostas - Armazenagem")
+else:
+    st.title("📄 Sistema de Propostas - Armazenagem")
+
+# Injeta uma faixa colorida que pega a tela toda no topo (Versão Corrigida)
+st.markdown(
+    """
+    <style>
+    .faixa-topo {
+        background-color: #008f84;
+        height: 15px;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+    }
+    </style>
+    <div class="faixa-topo"></div>
+    """,
+    unsafe_allow_html=True  # <-- O nome correto do parâmetro é este!
+)
+
 
 # Criando as abas na tela
 aba_proposta, aba_config = st.tabs(["📋 Preenchimento da Proposta", "⚙️ Configurações Fiscais"])
@@ -291,11 +327,8 @@ with aba_proposta:
     st.markdown("###")
     st.markdown("---")
     
-    # --- ESPAÇAMENTO E BOTÃO FINAL ---
-    st.markdown("###")
-    st.markdown("---")
     
-    if st.button("🚀 Gerar Proposta Comercial", use_container_width=True):
+    if st.button("🚀 Gerar Proposta Comercial", use_container_width=True, type="primary"):
         if not nome_cliente or not cnpj_cliente:
             st.error("⚠️ Por favor, preencha o Nome do Cliente e o CNPJ antes de gerar a proposta.")
         else:
