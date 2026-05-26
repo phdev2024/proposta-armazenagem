@@ -2,6 +2,7 @@ import streamlit as st
 from core.documento import gerar_contrato_word
 import os
 from core.documento import converter_docx_para_pdf
+from datetime import datetime
 
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
@@ -57,7 +58,22 @@ with aba_config:
 # --- ABA 1: PREENCHIMENTO DA PROPOSTA ---
 with aba_proposta:
     st.subheader("Dados Comerciais do Cliente")
-    
+
+    # 1. Pega a data de hoje no formato AAAAMMDD (Ex: 20260526)
+    data_atual_sugestao = datetime.now().strftime("%Y%m%d")
+    codigo_padrao = f"{data_atual_sugestao}-R0"
+
+    # 2. Criamos duas colunas: a primeira ocupa 1/3 da tela e a segunda fica vazia (2/3)
+    col_cod, col_vazia = st.columns([1, 2])
+    with col_cod:
+    # O campo agora fica confinado dentro da coluna menor, ficando bem mais curto!
+    # 2. Cria o campo na tela pré-preenchido, mas totalmente editável
+        codigo_proposta = st.text_input(
+    "Código de Controle da Proposta (Revisão)", 
+        value=codigo_padrao,
+        help="O sistema gera a data atual e a Revisão R0 automaticamente. Altere para R1, R2, etc., se for uma contraproposta."
+)
+
     col_empresa, col_cnpj = st.columns(2)
     with col_empresa:
         nome_cliente = st.text_input("Nome do Cliente / Razão Social", placeholder="Ex: Logística Brasil LTDA")
@@ -342,6 +358,7 @@ with aba_proposta:
             dados_da_proposta = {
                 "{{NOME_CLIENTE}}": nome_cliente,
                 "{{CNPJ_CLIENTE}}": cnpj_cliente,
+                "{{CODIGO_PROPOSTA}}": codigo_proposta,
                 
                 # Itens 2.1 a 2.3
                 "{{ITEM_1}}": "2.1", "{{VALOR_1}}": fmt_moeda(valor_armazenagem), "{{BASE_1}}": base_armazenagem, "{{PER_1}}": periodo_armazenagem,

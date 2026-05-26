@@ -3,12 +3,12 @@ import os
 from docx2pdf import convert
 import platform
 import subprocess
-
+from docx.shared import Inches
 
 def gerar_contrato_word(caminho_modelo, caminho_saida, dados):
     """
-    Função responsável por abrir o modelo Word, substituir as tags nos parágrafos
-    e nas tabelas pelos valores da tela, e salvar o arquivo final.
+    Lê o modelo Word, substitui as tags de texto e injeta a imagem da 
+    assinatura no lugar da tag {{ASSINATURA}}.
     """
     doc = Document(caminho_modelo)
     
@@ -25,8 +25,23 @@ def gerar_contrato_word(caminho_modelo, caminho_saida, dados):
                 for tag, valor in dados.items():
                     if tag in celula.text:
                         celula.text = celula.text.replace(tag, str(valor))
+
+    # 3. MÁGICA DA ASSINATURA: Injeta a imagem exatamente no parágrafo da tag
+    caminho_assinatura = "templates/assinatura.png"
+    
+    for paragrafo in doc.paragraphs:
+        if "{{ASSINATURA}}" in paragrafo.text:
+            # Limpa o texto da tag, deixando o parágrafo vazio, mas mantendo a sua posição
+            paragrafo.text = paragrafo.text.replace("{{ASSINATURA}}", "")
+            
+            if os.path.exists(caminho_assinatura):
+                # Adiciona a imagem direto no parágrafo limpo
+                run = paragrafo.add_run()
+                run.add_picture(caminho_assinatura, width=Inches(2.0))
+            break
+                
                         
-    # 3. Salva o documento preenchido
+    # 4. Salva o documento preenchido
     doc.save(caminho_saida)
 
 # Converter o documento em word para pdf
