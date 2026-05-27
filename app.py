@@ -8,9 +8,9 @@ from core.calculos import calcular_custo_por_posicao, simular_lucro_proposta
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
 
-#Gerador de memória para o valor de armazenagem
-if "valor_calculado_armazenagem" not in st.session_state:
-    st.session_state.valor_calculado_armazenagem = 115.00
+# Gerador de memória oficial para a chave do componente de armazenagem
+if "val_armazenagem" not in st.session_state:
+    st.session_state.val_armazenagem = 115.00
 
 # --- ADICIONANDO A LOGO DA EMPRESA ---
 caminho_logo = "templates/logo1.png"
@@ -43,6 +43,10 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# --- CAPTURA DE IMPOSTOS SEGURA ---
+if "iss_padrao" not in st.session_state:
+    st.session_state.iss_padrao = 2.0
 
 # ==============================================================================
 # 1. CRIAÇÃO DAS ABAS UNIFICADAS NO TOPO DA TELA
@@ -120,7 +124,8 @@ with aba_proposta:
             help="Arraste para ajustar a porcentagem de lucro real calculada sobre a venda."
         )
         
-    resultados = simular_lucro_proposta(custo_base_palete, paletes_cliente, margem_desejada)
+    # Enviamos o iss_padrao como o quarto ingrediente do cálculo
+    resultados = simular_lucro_proposta(custo_base_palete, paletes_cliente, margem_desejada, st.session_state.iss_padrao)
     
     # 2. Atualizamos a nossa caixinha de memória com o novo valor sugerido pelo simulador
     st.session_state.val_armazenagem = float(resultados['preco_por_palete_cliente'])
@@ -156,7 +161,6 @@ with aba_proposta:
         valor_armazenagem = st.number_input(
             "Valor (R$)", 
             min_value=0.0, 
-            value=st.session_state.val_armazenagem, 
             step=0.50, 
             key="val_armazenagem"
         )
@@ -470,10 +474,11 @@ with aba_proposta:
                 st.error(f"Erro ao gerar o arquivo: {e}")
 
 
-# ==============================================================================
 # --- ABA 3: CONFIGURAÇÕES FISCAIS ---
-# ==============================================================================
+# --- ABA 3: CONFIGURAÇÕES FISCAIS ---
 with aba_config:
     st.subheader("Configurações de Impostos e Taxas")
     st.write("Altere as alíquotas padrão se houver mudanças na legislação.")
-    iss_padrao = st.number_input("Alíquota do ISS (%)", min_value=0.0, max_value=100.0, value=2.0, step=0.1)
+    
+    # Usando a key="iss_padrao", o Streamlit vincula o campo diretamente com a memória do topo!
+    st.number_input("Alíquota do ISS (%)", min_value=0.0, max_value=100.0, step=0.1, key="iss_padrao")
