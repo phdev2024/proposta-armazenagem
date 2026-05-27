@@ -3,6 +3,7 @@ from core.documento import gerar_contrato_word
 import os
 from core.documento import converter_docx_para_pdf
 from datetime import datetime
+from core.calculos import calcular_custo_por_posicao, simular_lucro_proposta
 
 # Configuração da página
 st.set_page_config(page_title="Gerador de Propostas", layout="wide")
@@ -45,6 +46,74 @@ st.markdown(
     unsafe_allow_html=True  # <-- O nome correto do parâmetro é este!
 )
 
+st.header("⚙️ Configurações Ocupacionais do Galpão")
+st.markdown("---")
+
+# Criamos 4 colunas iguais para os dados do armazém
+col_aluguel, col_cond, col_luz, col_vagas = st.columns(4)
+
+with col_aluguel:
+    # Campo para o Aluguel (com valor padrão de teste)
+    aluguel = st.number_input("Aluguel (Mês)", value=30000.0, step=1000.0)
+
+with col_cond:
+    # Campo para o Condomínio
+    condominio = st.number_input("Condomínio", value=0.0, step=500.0)
+
+with col_luz:
+    # Campo para utilidades (Água, Luz, etc.)
+    utilidades = st.number_input("Água/Luz/Outros", value=0.0, step=500.0)
+
+with col_vagas:
+    # Campo para a quantidade de posições verticais físicas
+    posicoes_totais = st.number_input("Total de Posições (PP)", value=600, step=50)
+
+    # O Python pega os valores da tela e joga na função do nosso cérebro
+custo_base_palete = calcular_custo_por_posicao(aluguel, condominio, utilidades, posicoes_totais)
+
+# Exibe o resultado de forma elegante com uma caixinha de informação azul
+st.info(f"💡 **Custo Base da Operação:** Cada posição-palete custa hoje **R$ {custo_base_palete:.2f}** por mês para a empresa.")
+
+st.subheader("📊 Simulador de Negociação Estratégica")
+
+# Criamos 2 colunas para os dados do cliente e a barra ficarem bem distribuídos
+col_cliente, col_slider = st.columns([1, 2])
+
+with col_cliente:
+    # Campo para o gestor digitar quantos paletes o cliente quer armazenar
+    paletes_cliente = st.number_input("Quantidade de Paletes do Cliente", value=100, step=10)
+
+with col_slider:
+    # A famosa barra deslizante! Ela vai de 0% a 90% de margem de lucro
+    margem_desejada = st.slider(
+        "Margem de Lucro Desejada (%)", 
+        min_value=0, 
+        max_value=90, 
+        value=30, 
+        step=5,
+        help="Arraste para ajustar a porcentagem de lucro real calculada sobre a venda."
+        
+    )
+    # Veja se essa linha está exatamente após o bloco do st.slider:
+resultados = simular_lucro_proposta(custo_base_palete, paletes_cliente, margem_desejada)
+
+# 3. Exibição dos Cartões Metritos (O Visual TOP)
+st.markdown("### 📈 Resumo Comercial da Proposta")
+col_card1, col_card2, col_card3 = st.columns(3)
+
+with col_card1:
+    st.metric(label="Custo Seco da Operação", value=f"R$ {resultados['custo_total_cliente']:.2f}")
+
+with col_card2:
+    st.metric(label="Preço por Palete (Sugerido)", value=f"R$ {resultados['preco_por_palete_cliente']:.2f}")
+
+with col_card3:
+    st.metric(
+        label="Lucro Líquido Estimado", 
+        value=f"R$ {resultados['lucro_em_reais']:.2f}",
+        delta=f"Preço Total: R$ {resultados['preco_venda_final']:.2f}",
+        delta_color="normal"
+    )
 
 # Criando as abas na tela
 aba_proposta, aba_config = st.tabs(["📋 Preenchimento da Proposta", "⚙️ Configurações Fiscais"])
@@ -67,6 +136,7 @@ with aba_proposta:
     col_cod, col_vazia = st.columns([1, 2])
     with col_cod:
     # O campo agora fica confinado dentro da coluna menor, ficando bem mais curto!
+    
     # 2. Cria o campo na tela pré-preenchido, mas totalmente editável
         codigo_proposta = st.text_input(
     "Código de Controle da Proposta (Revisão)", 
